@@ -1,0 +1,11 @@
+# [python cache]
+__pycache__/*
+*.pyc
+
+# [build]
+build/
+dist/
+*.egg-info/
+
+# [notebook]
+.ipynb_checkpoints
