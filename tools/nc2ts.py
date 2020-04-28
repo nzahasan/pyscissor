@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
 
 '''
-'''
+Run this script to extract reduced timeseries from a 
+netCDF file under polygon regions of a shapefile.
 
+
+Usage:
+
+nc2ts.py  -n=[netcdf file] -ni=[netcdf dimenssion info] .. 
+          -s=[shapefile] -sp=[shapefile header info]  ..
+          -r=[reducer to be used min/max/avg/wavg]  ..
+          -o=[output filename]
+'''
 
 import sys
 import fiona
@@ -66,7 +75,7 @@ def main():
     datavar = nc_file.variables[nci['V']][:]
     timevar = nc_file.variables[nci['T']]
 
-    # [parse time]
+    # parse time
 
     times  = num2date(timevar[:],timevar.units)
     times = [ tx.strftime(tx.format) for tx in times  ]
@@ -79,7 +88,8 @@ def main():
 
     dims=nc_file.variables[nci['V']].dimensions
 
-    # [check dimesnion order]
+    # check if dimesnions are in desired order
+    
     t_pos,y_pos,x_pos = dims.index(nci['T']),dims.index(nci['Y']),dims.index(nci['X'])
 
     if not ( (t_pos<y_pos<x_pos) or (t_pos<x_pos<y_pos) ):
@@ -90,7 +100,6 @@ def main():
         print('weight needs to be transposed')
 
     # if datavar is not masked array create masked array
-    
 
     if nci.get('slicer',None)!=None:
 
@@ -143,29 +152,31 @@ def main():
         else:
             header = nci['V']
 
-        for ti in range(len(times)):
+        # calculate redused value of each timestep
+        for ts in range(len(times)):
 
             if args.reducer=='min':
 
-                tseries_val[ti] = datavar[ti].min()
+                tseries_val[ts] = datavar[ts].min()
 
             elif args.reducer=='max':
 
-                tseries_val[ti] = datavar[ti].max()
+                tseries_val[ts] = datavar[ts].max()
 
             elif args.reducer=='avg':
 
-                tseries_val[ti] = datavar[ti].mean()
+                tseries_val[ts] = datavar[ts].mean()
 
             elif args.reducer=='wavg':
 
-                tseries_val[ti] = np.average(datavar[ti],weights=weight_grid)
+                tseries_val[ts] = np.average(datavar[ts],weights=weight_grid)
 
         tseries_data[header] = tseries_val
 
         if not args.out.endswith('.csv'):
             args.out+='.csv'
-        tseries_data.to_csv(args.out)
+
+        tseries_data.to_csv(args.out,float_format='%.4f')
 
 
 
