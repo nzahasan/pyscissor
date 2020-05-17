@@ -113,7 +113,7 @@ def main():
     if len(shp_file)>1:
         use_prop_header=True
 
-        if args.sp==None:
+        if args.shpprop==None:
             sys.exit(
                 'shapefile has more than 1 record.',
                 'No shape properties is provided for column header'
