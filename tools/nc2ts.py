@@ -9,6 +9,7 @@ import fiona
 import argparse
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from pyscissor import scissor
 from shapely.geometry import shape
 from datetime import datetime as dt
@@ -119,9 +120,16 @@ def main():
                 'No shape properties is provided for column header'
             )
 
+    premasked=np.ma.is_masked(datavar)
+
+    if premasked:
+        # explicitly copy this mask otherwise gets 
+        # overwriten at every iteration of shape
+
+        root_mask=datavar.mask.copy()
 
     # extract data
-    for rec in shp_file:
+    for rec in tqdm(shp_file):
         tseries_val=[None]*len(times)
         
         shapely_obj = shape(rec['geometry']) 
@@ -130,9 +138,9 @@ def main():
         pys = scissor(shapely_obj,lats,lons)
         weight_grid = pys.get_masked_weight()
 
-        # can be premasked 
-        if np.ma.is_masked(datavar):
-            datavar.mask+=weight_grid.mask
+        # handle premasked values 
+        if premasked:
+            datavar.mask=np.bitwise_or(root_mask,weight_grid.mask)
         else:
             datavar.mask=weight_grid.mask
         
@@ -166,6 +174,9 @@ def main():
         if not args.out.endswith('.csv'):
             args.out+='.csv'
         tseries_data.to_csv(args.out)
+
+
+
 
 
 
