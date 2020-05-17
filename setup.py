@@ -21,5 +21,6 @@ setup(
         'shapely',
         'fiona',
         'pandas',
+        'tqdm',
     ]
 )
