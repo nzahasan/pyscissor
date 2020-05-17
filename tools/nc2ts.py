@@ -184,7 +184,7 @@ def main():
         if not args.out.endswith('.csv'):
             args.out+='.csv'
 
-        tseries_data.to_csv(args.out,float_format='%.4f')
+        tseries_data.to_csv(args.out,float_format='%.4f',index=False)
 
 
 
