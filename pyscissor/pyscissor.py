@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
 import numpy as np
 from shapely.geometry import Polygon,MultiPolygon
@@ -28,7 +28,6 @@ class scissor():
         min_lat_idx = np.abs(self.lats - self.shape_obj.bounds[1]).argmin()
         max_lat_idx = np.abs(self.lats - self.shape_obj.bounds[3]).argmin()
 
-
         # expand lat lon index by 1 cell 
         self.lon_idx_range = np.arange( 
             (min_lon_idx-1) if min_lon_idx>0 else 0,
@@ -39,7 +38,7 @@ class scissor():
         #   - lat deceases with index[generel case] / Lat reversed
         #   - lat inceases with index[odd case]  
 
-        # (90.53868604700006, 20.746514391000062, 92.68025738200004, 24.266389881000066)
+        # shape bound sample (90.53, 20.74, 92.68, 24.26)
 
         self.lat_reversed = True
 
@@ -51,12 +50,12 @@ class scissor():
             # generel
             self.lat_idx_range = np.arange(
                 (max_lat_idx-1) if max_lat_idx>0 else 0,
-                (min_lat_idx+1)+1 if (min_lat_idx+1)<(self.nlats-1) else min_lat_idx+1
+                (min_lat_idx+1)+1 if (min_lat_idx+1)<self.nlats else min_lat_idx+1
             )
-        elif not self.lat_reversed:
+        else:
             self.lat_idx_range = np.arange(
                 (min_lat_idx-1) if min_lat_idx>0 else 0,
-                (max_lat_idx+1)+1 if (max_lat_idx+1)<(self.nlats-1) else max_lat_idx+1
+                (max_lat_idx+1)+1 if (max_lat_idx+1)< self.nlats else max_lat_idx+1
             )
 
     def __repr__(self):
@@ -67,7 +66,7 @@ class scissor():
     def get_masked_weight(self):
         
         ''' 
-    
+
         # generel case
                 
                                        r-1,c 
@@ -230,4 +229,88 @@ class scissor():
 
         # return a musked array, if only mask is neded use arr.mask
         return np.ma.masked_array(weight_grid,mask=mask_grid)
+
+
+    # using recursive division
+    # https://gist.github.com/perrette/a78f99b76aed54b6babf3597e0b331f8
+    def get_masked_weight_recursive(self,lat_ids=None,lon_ids=None,masked_weight=None,root=True):
+
+
+        # initial case
+        if root==True:
+            lat_ids       = self.lat_idx_range.copy()
+            lon_ids       = self.lon_idx_range.copy()
+            masked_weight = np.zeros((self.nlats,self.nlons))
+
+        
+        gx0,gx1= lat_ids[0],lat_ids[-1]
+        gy0,gy1= lon_ids[-1],lon_ids[0]
+
+        if gx0==0:
+            x0 = self.lons[gx0] - abs( self.lons[gx0+1] - self.lons[gx0])/2
+        else:
+            x0 = (self.lons[gx0] + self.lons[gx0-1])/2
+
+        if gx1==(self.nlons-1):
+            x1 = self.lons[gx1] + abs(self.lons[gx1] - self.lons[gx1-1])/2
+        else:
+            x1 = (self.lons[gx1] + self.lons[gx1+1])/2
+
+        if gy0==self.nlats-1:
+            if self.lat_reversed:
+                y0 = self.lats[gy0] - abs(self.lats[gy0-1]-self.lats[gy0])/2
+            elif not self.lat_reversed:
+                # r + [r-(r-1)]/2
+                y0 =  self.lats[gy0] + abs(self.lats[gy0]-self.lats[gy0-1])/2
+                
+        else:
+            y0 = (self.lats[gy0]+self.lats[gy0+1])/2
+          
+        if gy1==0:
+            if self.lat_reversed:
+                y1 = self.lats[gy1] + abs(self.lats[gy1] - self.lats[gy1+1])/2
+            elif not self.lat_reversed:
+                # r - [(r+1)-r]/2,c
+                y1 = self.lats[gy1] - abs(self.lats[gy1+1] - self.lats[gy1])/2
+        else:
+            y1 = (self.lats[gy1] + self.lats[gy1-1])/2 
+
+        # grid box corners
+        grid00 = (x0,y0)
+        grid10 = (x1,y0)
+        grid11 = (x1,y1)
+        grid01 = (x0,y1)
+        grid_box_poly = Polygon((grid00,grid10,grid11,grid01))
+        
+        intersection_ratio = self.shape_obj.intersection(grid_box_poly).area/grid_box_poly.area
+
+        if intersection_ratio==1:
+            masked_weight[gy0:gy1+1,gx0:gx1+1] = 1
+            # weight_grid.mask[gy0:gy1+1,gx0:gx1+1] = False
+
+        elif intersection_ratio==0:
+            masked_weight[gy0:gy1+1,gx0:gx1+1] = 0
+            # weight_grid.mask[gy0:gy1+1,gx0:gx1+1] = True
+        
+        elif intersection_ratio>0 and lon_ids.shape[0]==1 and lat_ids.shape[0]==1:
+                masked_weight[lat_ids[0],lon_ids[0]]=intersection_ratio
+
+        else:
+            
+            lti_ = lat_ids.shape[0]
+            lni_ = lon_ids.shape[0]
+
+            self.get_masked_weight_recursive(lat_ids[:lti_//2],lon_ids[:lni_//2],masked_weight,False)
+            self.get_masked_weight_recursive(lat_ids[:lti_//2],lon_ids[lni_//2:],masked_weight,False)
+            self.get_masked_weight_recursive(lat_ids[lti_//2:],lon_ids[:lni_//2],masked_weight,False)
+            self.get_masked_weight_recursive(lat_ids[lti_//2:],lon_ids[lni_//2:],masked_weight,False)
+
+
+
+        if root==True:
+            return masked_weight
+
+
+
+
 
