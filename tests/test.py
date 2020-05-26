@@ -1,3 +1,4 @@
+import fiona
 import unittest
 import numpy as np
 from pyscissor import scissor
@@ -64,6 +65,11 @@ class test_scissor(unittest.TestCase):
 
 		self.assertEqual(total_intersect,4)
 		self.assertEqual(wg.sum(),1)
+
+
+	def test_sample2(self):
+
+		sf = fiona.open("data/shape_2.geojson",'r')
 
 
 if __name__ == '__main__':

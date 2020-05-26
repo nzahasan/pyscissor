@@ -1,2 +1,5 @@
 *.ipynb linguist-vendored
-notebooks/* linguist-vendored
+*.zip binary
+*.geojson binary
+*.nc binary
+*.png binary

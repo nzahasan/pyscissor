@@ -232,19 +232,33 @@ class scissor():
 
 
     # using recursive division
-    # https://gist.github.com/perrette/a78f99b76aed54b6babf3597e0b331f8
+    # inspiration: https://gist.github.com/perrette/a78f99b76aed54b6babf3597e0b331f8
     def get_masked_weight_recursive(self,lat_ids=None,lon_ids=None,masked_weight=None,root=True):
 
+        '''
+                      gy1
+                       |
+           23 > ----------------- < 22 (0)
+                |               |
+         gx0<---|               |--->gx1
+                |               |
+           22 > ----------------- < 23 (-1)
+                       |
+                      gy0
 
-        # initial case
+        '''
+
+        # root func call
         if root==True:
             lat_ids       = self.lat_idx_range.copy()
             lon_ids       = self.lon_idx_range.copy()
-            masked_weight = np.zeros((self.nlats,self.nlons))
+            masked_weight = np.ma.masked_array(
+                                np.zeros((self.nlats,self.nlons)),
+                                mask = np.ones((self.nlats,self.nlons),dtype=np.bool)
+                            )
 
-        
-        gx0,gx1= lat_ids[0],lat_ids[-1]
-        gy0,gy1= lon_ids[-1],lon_ids[0]
+        gx0,gx1= lon_ids[0],lon_ids[-1]
+        gy0,gy1= lat_ids[-1],lat_ids[0]
 
         if gx0==0:
             x0 = self.lons[gx0] - abs( self.lons[gx0+1] - self.lons[gx0])/2
@@ -256,55 +270,67 @@ class scissor():
         else:
             x1 = (self.lons[gx1] + self.lons[gx1+1])/2
 
-        if gy0==self.nlats-1:
+        if gy0==(self.nlats-1):
             if self.lat_reversed:
                 y0 = self.lats[gy0] - abs(self.lats[gy0-1]-self.lats[gy0])/2
-            elif not self.lat_reversed:
-                # r + [r-(r-1)]/2
+            else:
                 y0 =  self.lats[gy0] + abs(self.lats[gy0]-self.lats[gy0-1])/2
-                
         else:
             y0 = (self.lats[gy0]+self.lats[gy0+1])/2
           
         if gy1==0:
             if self.lat_reversed:
                 y1 = self.lats[gy1] + abs(self.lats[gy1] - self.lats[gy1+1])/2
-            elif not self.lat_reversed:
-                # r - [(r+1)-r]/2,c
+            else:
                 y1 = self.lats[gy1] - abs(self.lats[gy1+1] - self.lats[gy1])/2
         else:
             y1 = (self.lats[gy1] + self.lats[gy1-1])/2 
 
         # grid box corners
-        grid00 = (x0,y0)
-        grid10 = (x1,y0)
-        grid11 = (x1,y1)
-        grid01 = (x0,y1)
+        grid00,grid10,grid11,grid01 = (x0,y0),(x1,y0),(x1,y1),(x0,y1)
+
         grid_box_poly = Polygon((grid00,grid10,grid11,grid01))
         
         intersection_ratio = self.shape_obj.intersection(grid_box_poly).area/grid_box_poly.area
 
-        if intersection_ratio==1:
-            masked_weight[gy0:gy1+1,gx0:gx1+1] = 1
-            # weight_grid.mask[gy0:gy1+1,gx0:gx1+1] = False
+        lt_len = lat_ids.shape[0]
+        ln_len = lon_ids.shape[0]
 
-        elif intersection_ratio==0:
-            masked_weight[gy0:gy1+1,gx0:gx1+1] = 0
-            # weight_grid.mask[gy0:gy1+1,gx0:gx1+1] = True
-        
-        elif intersection_ratio>0 and lon_ids.shape[0]==1 and lat_ids.shape[0]==1:
-                masked_weight[lat_ids[0],lon_ids[0]]=intersection_ratio
 
-        else:
+        if intersection_ratio>0:
+            # full intersection
+            if intersection_ratio==1:
+                masked_weight[gy1:gy0+1,gx0:gx1+1] = 1
+                masked_weight.mask[gy1:gy0+1,gx0:gx1+1]=False
             
-            lti_ = lat_ids.shape[0]
-            lni_ = lon_ids.shape[0]
+            # partial intersection
+            elif intersection_ratio<1:
+                
+                # single cell
+                if lt_len==1 and ln_len==1:
 
-            self.get_masked_weight_recursive(lat_ids[:lti_//2],lon_ids[:lni_//2],masked_weight,False)
-            self.get_masked_weight_recursive(lat_ids[:lti_//2],lon_ids[lni_//2:],masked_weight,False)
-            self.get_masked_weight_recursive(lat_ids[lti_//2:],lon_ids[:lni_//2],masked_weight,False)
-            self.get_masked_weight_recursive(lat_ids[lti_//2:],lon_ids[lni_//2:],masked_weight,False)
+                    if intersection_ratio >0:
+                        masked_weight[lat_ids[0],lon_ids[0]]=intersection_ratio
+                        masked_weight.mask[lat_ids[0],lon_ids[0]]=False
+                
+                # single row > subdevide into 2 row
+                elif lt_len==1:
+                    self.get_masked_weight_recursive(lat_ids,lon_ids[:ln_len//2],masked_weight,False)
+                    self.get_masked_weight_recursive(lat_ids,lon_ids[ln_len//2:],masked_weight,False)
+                
+                # single column > subdevide into 2 column
+                elif ln_len==1:
+                    self.get_masked_weight_recursive(lat_ids[lt_len//2:],lon_ids,masked_weight,False)
+                    self.get_masked_weight_recursive(lat_ids[:lt_len//2],lon_ids,masked_weight,False)
 
+                # block > subdevide into 4 blocks
+                else:
+                    self.get_masked_weight_recursive(lat_ids[:lt_len//2],lon_ids[:ln_len//2],masked_weight,False)
+                    self.get_masked_weight_recursive(lat_ids[:lt_len//2],lon_ids[ln_len//2:],masked_weight,False)
+                    self.get_masked_weight_recursive(lat_ids[lt_len//2:],lon_ids[:ln_len//2],masked_weight,False)
+                    self.get_masked_weight_recursive(lat_ids[lt_len//2:],lon_ids[ln_len//2:],masked_weight,False)
+
+        # else 0: -> already is zero
 
 
         if root==True:

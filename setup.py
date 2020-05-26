@@ -1,12 +1,13 @@
 #! /usr/bin/env python3
 from setuptools import setup
+from pyscissor import __version__
 
 setup(
     name='pyscissor',
-    version='0.1',
+    version=__version__,
     keywords='netcdf crop shapefile',
     url='https://github.com/nzahasan/pyscissor',
-    description='A python module for obtaining reduced(min,max,avg) value from netCDF file under a polygon',
+    description='A python module for obtaining reduced(min,max,avg) value from netCDF file under a polygon region',
     author='nzahasan',
     author_email='nzahasan@gmail.com',
     license='MIT',

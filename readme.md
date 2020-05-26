@@ -13,12 +13,10 @@ $ git clone https://github.com/nzahasan/pyscissor.git
 $ cd pyscissor
 $ python3 setup.py install
 ```
-or
+or using pip
 
 ```bash
-$ git clone https://github.com/nzahasan/pyscissor.git
-$ cd pyscissor
-$ pip install .
+$ pip install https://github.com/nzahasan/pyscissor/zipball/master
 ```
 
 ### Using pyscissor
