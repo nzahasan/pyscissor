@@ -58,10 +58,15 @@ Options:
 
 	-n = netcdf file
 
-	-ni = netcdf information
-		provide X = x dimension,Y= y dimension,T = time dimesion, V=variable name,
-		idx = slicing index for obtaining 3d array 
-				(only requires if variable has greather than three dimension)
+	-ni = netcdf variable and dimension information
+			available options:
+			X = x dimension variable name,
+			Y = y dimension variable name,
+			T = time dimesion variable name,
+			V = variable name,
+			slicer = slicing index for obtaining 3d array [optional]
+					
+			note: `slicer` is required if variable has greather than three dimension
 
 	-s  = shape file ( canbe zipped shapefile, shapefile or geojson )
 
