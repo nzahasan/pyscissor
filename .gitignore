@@ -9,3 +9,9 @@ dist/
 
 # [notebook]
 .ipynb_checkpoints
+
+# [vscode]
+.vscode
+
+# [pytest]
+.pytest_*

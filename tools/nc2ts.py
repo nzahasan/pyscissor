@@ -7,10 +7,11 @@ netCDF file under polygon regions of a shapefile.
 
 Usage:
 
-nc2ts.py  -n=[netcdf file] -ni=[netcdf dimenssion info] .. 
-          -s=[shapefile] -sp=[shapefile header info]  ..
-          -r=[reducer to be used min/max/avg/wavg]  ..
-          -o=[output filename]
+nc2ts.py  -n =[netcdf file] -ni=[netcdf dimenssion info] .. 
+          -s =[shapefile] -sp=[shapefile header info]  ..
+          -r =[reducer to be used min/max/avg/wavg]  ..
+          -rs=[use recursive subdidision instead of iteration] ..
+          -o =[output filename]
 '''
 
 import sys
@@ -29,28 +30,64 @@ from netCDF4 import Dataset,num2date
 def main():
     arg_parser=argparse.ArgumentParser()
 
-    arg_parser.add_argument('-n', '--netcdf', dest="nc",required=True,
-                            type=str,default=None, help="netcdf file location")
+    arg_parser.add_argument('-n', '--netcdf', 
+                                dest="nc",
+                                required=True,
+                                type=str,
+                                default=None, 
+                                help="netcdf file location"
+                            )
 
-    arg_parser.add_argument('-ni', '--netcdf-info', dest="nci",required=True,
-                            type=str,default=None, help="netcdf file details")
+    arg_parser.add_argument('-ni', '--netcdf-info',
+                                dest="nci",
+                                required=True,
+                                type=str,
+                                default=None,
+                                help="netcdf file details"
+                            )
 
-    arg_parser.add_argument('-s', '--shapefile', dest="shp",required=True,
-                            type=str,help="shapefile location")
+    arg_parser.add_argument('-s', '--shapefile',
+                                dest="shp",
+                                required=True,
+                                type=str,
+                                help="shapefile location"
+                            )
 
     # only required when shapefile contains multiple record
-    arg_parser.add_argument('-sp', '--shapefile-prop', dest="shpprop", default=None,
-                            type=str,help="csv header if shapefile contains multiple records")
+    arg_parser.add_argument('-sp', '--shapefile-prop',
+                                dest="shpprop", 
+                                default=None,
+                                type=str,
+                                help="csv header if shapefile contains multiple records"
+                            )
 
-    arg_parser.add_argument('-r', '--reducer',dest="reducer",
-                            type=str,default='avg',    help="reducer min,max,avg,wavg")
+    arg_parser.add_argument('-r', '--reducer',
+                                dest="reducer",
+                                type=str,
+                                default='avg',
+                                choices=['min','max','avg','wavg']
+                                help="reducer (available: min,max,avg,wavg)"
+                            )
 
-    arg_parser.add_argument('-o', '--output',    dest="out", required=True,
-                            type=str,default='ts.csv' ,help="output file")
+    arg_parser.add_argument('-rs', '--recursive-subdivision',
+                                dest="recursive_division", 
+                                default='false',
+                                choices=['true', 'false'],
+                                type=str,
+                                help="use recrusive subdivision"
+                            )
+
+    arg_parser.add_argument('-o', '--output',
+                                dest="out", 
+                                required=True,
+                                type=str,
+                                default='ts.csv',
+                                help="output file"
+                            )
+
+
 
     args = arg_parser.parse_args()
-
-
 
     nci={}
     
@@ -142,10 +179,14 @@ def main():
         tseries_val=[None]*len(times)
         
         shapely_obj = shape(rec['geometry']) 
-
+        
         # get weighted grid
         pys = scissor(shapely_obj,lats,lons)
-        weight_grid = pys.get_masked_weight()
+
+        if args.recursive_division=='false':
+            weight_grid = pys.get_masked_weight()
+        elif args.recursive_division=='true':
+            weight_grid = pys.get_masked_weight_recursive()
 
         # handle premasked values 
         if premasked:
