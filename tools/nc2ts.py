@@ -65,7 +65,7 @@ def main():
                                 dest="reducer",
                                 type=str,
                                 default='avg',
-                                choices=['min','max','avg','wavg']
+                                choices=['min','max','avg','wavg'],
                                 help="reducer (available: min,max,avg,wavg)"
                             )
 
