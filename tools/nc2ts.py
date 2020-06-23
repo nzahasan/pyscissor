@@ -19,7 +19,7 @@ import fiona
 import argparse
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+from yaspin import yaspin
 from pyscissor import scissor
 from shapely.geometry import shape
 from datetime import datetime as dt
@@ -28,204 +28,212 @@ from netCDF4 import Dataset,num2date
 
 
 def main():
-    arg_parser=argparse.ArgumentParser()
+	arg_parser=argparse.ArgumentParser()
 
-    arg_parser.add_argument('-n', '--netcdf', 
-                                dest="nc",
-                                required=True,
-                                type=str,
-                                default=None, 
-                                help="netcdf file location"
-                            )
+	arg_parser.add_argument('-n', '--netcdf', 
+								dest="nc",
+								required=True,
+								type=str,
+								default=None, 
+								help="netcdf file location"
+							)
 
-    arg_parser.add_argument('-ni', '--netcdf-info',
-                                dest="nci",
-                                required=True,
-                                type=str,
-                                default=None,
-                                help="netcdf file details"
-                            )
+	arg_parser.add_argument('-ni', '--netcdf-info',
+								dest="nci",
+								required=True,
+								type=str,
+								default=None,
+								help="netcdf file details"
+							)
 
-    arg_parser.add_argument('-s', '--shapefile',
-                                dest="shp",
-                                required=True,
-                                type=str,
-                                help="shapefile location"
-                            )
+	arg_parser.add_argument('-s', '--shapefile',
+								dest="shp",
+								required=True,
+								type=str,
+								help="shapefile location"
+							)
 
-    # only required when shapefile contains multiple record
-    arg_parser.add_argument('-sp', '--shapefile-prop',
-                                dest="shpprop", 
-                                default=None,
-                                type=str,
-                                help="csv header if shapefile contains multiple records"
-                            )
+	# only required when shapefile contains multiple record
+	arg_parser.add_argument('-sp', '--shapefile-prop',
+								dest="shpprop", 
+								default=None,
+								type=str,
+								help="csv header if shapefile contains multiple records"
+							)
 
-    arg_parser.add_argument('-r', '--reducer',
-                                dest="reducer",
-                                type=str,
-                                default='avg',
-                                choices=['min','max','avg','wavg'],
-                                help="reducer (available: min,max,avg,wavg)"
-                            )
+	arg_parser.add_argument('-r', '--reducer',
+								dest="reducer",
+								type=str,
+								default='avg',
+								choices=['min','max','avg','wavg'],
+								help="reducer (available: min,max,avg,wavg)"
+							)
 
-    arg_parser.add_argument('-rs', '--recursive-subdivision',
-                                dest="recursive_division", 
-                                default='false',
-                                choices=['true', 'false'],
-                                type=str,
-                                help="use recrusive subdivision"
-                            )
+	arg_parser.add_argument('-rs', '--recursive-subdivision',
+								dest="recursive_division", 
+								default='false',
+								choices=['true', 'false'],
+								type=str,
+								help="use recrusive subdivision"
+							)
 
-    arg_parser.add_argument('-o', '--output',
-                                dest="out", 
-                                required=True,
-                                type=str,
-                                default='ts.csv',
-                                help="output file"
-                            )
-
-
-
-    args = arg_parser.parse_args()
-
-    nci={}
-    
-    for rec in args.nci.split(';'):
-        rec_split = rec.split('=')
-        
-        if len(rec_split)!=2 or rec_split[1]=='': 
-            continue
-
-        key,val=rec_split
-        nci[key]=val
+	arg_parser.add_argument('-o', '--output',
+								dest="out", 
+								required=True,
+								type=str,
+								default='ts.csv',
+								help="output file"
+							)
 
 
-    if args.shp.endswith('.zip'):
-        args.shp='zip://'+args.shp
+
+	args = arg_parser.parse_args()
+
+	nci={}
+	
+	for rec in args.nci.split(';'):
+		rec_split = rec.split('=')
+		
+		if len(rec_split)!=2 or rec_split[1]=='': 
+			continue
+
+		key,val=rec_split
+		nci[key]=val
 
 
-    # read netcdf
-
-    nc_file = Dataset(args.nc,'r')
-    lats    = nc_file.variables[nci['Y']][:]
-    lons    = nc_file.variables[nci['X']][:]
-    datavar = nc_file.variables[nci['V']][:]
-    timevar = nc_file.variables[nci['T']]
-
-    # parse time
-
-    times  = num2date(timevar[:],timevar.units)
-    times = [ tx.strftime(tx.format) for tx in times  ]
-
-    tseries_data = pd.DataFrame()
-    tseries_data['date']=times
-
-    # if lat and lon position is reversed transpose
-    transpose_weight=False
-
-    dims=nc_file.variables[nci['V']].dimensions
-
-    # check if dimesnions are in desired order
-    
-    t_pos,y_pos,x_pos = dims.index(nci['T']),dims.index(nci['Y']),dims.index(nci['X'])
-
-    if not ( (t_pos<y_pos<x_pos) or (t_pos<x_pos<y_pos) ):
-        sys.exit('invalid time dimension orders')
-    
-    if y_pos>x_pos:
-        transpose_weight=True
-        print('weight needs to be transposed')
-
-    # if datavar is not masked array create masked array
-
-    if nci.get('slicer',None)!=None:
-
-        try:
-            datavar = eval(f"datavar{nci['slicer']}")
-        except:
-            sys.exit('invalid slicing information')
-
-    if len(datavar.shape)>3:
-
-        sys.exit(f"{nci['V']} has more than 3 dimension,provide slicing information")
+	if args.shp.endswith('.zip'):
+		args.shp='zip://'+args.shp
 
 
-    # read shapefile
+	# read netcdf
 
-    shp_file = fiona.open(args.shp,'r')
+	nc_file = Dataset(args.nc,'r')
+	lats    = nc_file.variables[nci['Y']][:]
+	lons    = nc_file.variables[nci['X']][:]
+	datavar = nc_file.variables[nci['V']][:]
+	timevar = nc_file.variables[nci['T']]
 
-    use_prop_header=False
+	# parse time
 
-    if len(shp_file)>1:
-        use_prop_header=True
+	times  = num2date(timevar[:],timevar.units)
+	times = [ tx.strftime(tx.format) for tx in times  ]
 
-        if args.shpprop==None:
-            sys.exit(
-                'shapefile has more than 1 record.',
-                'No shape properties is provided for column header'
-            )
+	tseries_data = pd.DataFrame()
+	tseries_data['date']=times
 
-    premasked=np.ma.is_masked(datavar)
+	# if lat and lon position is reversed transpose
+	transpose_weight=False
 
-    if premasked:
-        # explicitly copy this mask otherwise gets 
-        # overwriten at every iteration of shape
+	dims=nc_file.variables[nci['V']].dimensions
 
-        root_mask=datavar.mask.copy()
+	# check if dimesnions are in desired order
+	
+	t_pos,y_pos,x_pos = dims.index(nci['T']),dims.index(nci['Y']),dims.index(nci['X'])
 
-    # extract data
-    for rec in tqdm(shp_file):
-        tseries_val=[None]*len(times)
-        
-        shapely_obj = shape(rec['geometry']) 
-        
-        # get weighted grid
-        pys = scissor(shapely_obj,lats,lons)
+	if not ( (t_pos<y_pos<x_pos) or (t_pos<x_pos<y_pos) ):
+		sys.exit('invalid time dimension orders')
+	
+	if y_pos>x_pos:
+		transpose_weight=True
+		print('weight needs to be transposed')
 
-        if args.recursive_division=='false':
-            weight_grid = pys.get_masked_weight()
-        elif args.recursive_division=='true':
-            weight_grid = pys.get_masked_weight_recursive()
+	# if datavar is not masked array create masked array
 
-        # handle premasked values 
-        if premasked:
-            datavar.mask=np.bitwise_or(root_mask,weight_grid.mask)
-        else:
-            datavar.mask=weight_grid.mask
-        
-        if use_prop_header:
-            header=''
-            for prop in args.shpprop.split(';'):
-                header += str(rec['properties'].get(prop,''))+','
-        else:
-            header = nci['V']
+	if nci.get('slicer',None)!=None:
 
-        # calculate redused value of each timestep
-        for ts in range(len(times)):
+		try:
+			datavar = eval(f"datavar{nci['slicer']}")
+		except:
+			sys.exit('invalid slicing information')
 
-            if args.reducer=='min':
+	if len(datavar.shape)>3:
 
-                tseries_val[ts] = datavar[ts].min()
+		sys.exit(f"{nci['V']} has more than 3 dimension,provide slicing information")
 
-            elif args.reducer=='max':
 
-                tseries_val[ts] = datavar[ts].max()
+	# read shapefile
 
-            elif args.reducer=='avg':
+	shp_file = fiona.open(args.shp,'r')
 
-                tseries_val[ts] = datavar[ts].mean()
+	use_prop_header=False
 
-            elif args.reducer=='wavg':
+	shp_rec_count = len(shp_file)
 
-                tseries_val[ts] = np.average(datavar[ts],weights=weight_grid)
+	if shp_rec_count>1:
+		use_prop_header=True
 
-        tseries_data[header] = tseries_val
+		if args.shpprop==None:
+			sys.exit(
+				'shapefile has more than 1 record.',
+				'No shape properties is provided for column header'
+			)
 
-        if not args.out.endswith('.csv'):
-            args.out+='.csv'
+	premasked=np.ma.is_masked(datavar)
 
-        tseries_data.to_csv(args.out,float_format='%.4f',index=False)
+	if premasked:
+		# explicitly copy this mask otherwise gets 
+		# overwriten at every iteration of shape
+
+		root_mask=datavar.mask.copy()
+
+	# extract data
+	for idx,rec in enumerate(shp_file):
+		
+		with yaspin(text=f"processing shape {idx+1} out of {shp_rec_count} {args.recursive_division}", color="yellow") as spinner:
+			tseries_val=[None]*len(times)
+			
+			shapely_obj = shape(rec['geometry']) 
+			
+			# get weighted grid
+			pys = scissor(shapely_obj,lats,lons)
+
+			if args.recursive_division=='false':
+				weight_grid = pys.get_masked_weight()
+			elif args.recursive_division=='true':
+				weight_grid = pys.get_masked_weight_recursive()
+
+			# handle premasked values 
+			if premasked:
+				datavar.mask=np.bitwise_or(root_mask,weight_grid.mask)
+			else:
+				datavar.mask=weight_grid.mask
+			
+			if use_prop_header:
+				header=''
+				for prop in args.shpprop.split(';'):
+					header += str(rec['properties'].get(prop,''))+','
+			else:
+				header = nci['V']
+
+			# calculate redused value of each timestep
+			for ts in range(len(times)):
+
+				if args.reducer=='min':
+
+					tseries_val[ts] = datavar[ts].min()
+
+				elif args.reducer=='max':
+
+					tseries_val[ts] = datavar[ts].max()
+
+				elif args.reducer=='avg':
+
+					tseries_val[ts] = datavar[ts].mean()
+
+				elif args.reducer=='wavg':
+
+					tseries_val[ts] = np.average(datavar[ts],weights=weight_grid)
+
+			tseries_data[header] = tseries_val
+
+			spinner.ok(f"✔")
+
+
+
+	if not args.out.endswith('.csv'):
+		args.out+='.csv'
+
+	tseries_data.to_csv(args.out,float_format='%.4f',index=False)
 
 
 
@@ -233,4 +241,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+	main()

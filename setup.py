@@ -22,6 +22,6 @@ setup(
         'shapely',
         'fiona',
         'pandas',
-        'tqdm',
+        'yaspin',
     ]
 )
