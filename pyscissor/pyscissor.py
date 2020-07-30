@@ -59,7 +59,7 @@ class scissor():
             )
 
     def __repr__(self):
-        return f'<pyscissor>'        
+        return '<pyscissor_instance>'        
 
 
     

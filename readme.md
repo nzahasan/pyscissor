@@ -1,4 +1,5 @@
 # pyscissor
+
 A Python3 module for extracting data from netcdf file under a shapefile region. 
 
 <img src="data/sample.png" height="500" align="center">
@@ -43,37 +44,45 @@ A detailed use case can be found <a href="notebooks/example_01.ipynb">here</a>
 
 
 ### Using nc2ts.py
-this module contains `nc2ts.py` script. This can be used to extract reduced(min/max/average/weighted average) timeseries form netcdf file
+the package contains a `nc2ts.py` script. Which can be used to quickly extract 
+reduced(min/max/average/weighted average) time-series form netcdf file with shapefile
 
 ```bash
-# with 4d array [data/sample_1.nc]
-$ nc2ts.py -n=sample_1.nc -ni='Y=lat;X=lon;T=time;V=temperature;slicer=[:,0,:,:]' -s=shape_esri.zip \
-		-sp='ADM2_EN;ADM3_EN' -r=wavg -o=test1.csv
-
-# with 3d array [data/sample_2.nc] normal case
-$ nc2ts.py -n=sample_2.nc -ni='Y=lat;X=lon;T=time;V=tmin;' -s=shape_esri.zip \
+# with 3d array [data/sample_2.nc] generel case
+$ nc2ts_by_shp.py -nc=sample_2.nc -nci='Y=lat;X=lon;T=time;V=tmin;' -s=shape_esri.zip \
 		-sp='ADM2_EN;ADM3_EN' -r=avg -o=test2.csv
+
+# with 4d array [data/sample_1.nc]
+$ nc2ts_by_shp.py -nc=sample_1.nc -nci='Y=lat;X=lon;T=time;V=temperature;slicer=[:,0,:,:]' -sf=shape_esri.zip \
+		-sfp='ADM2_EN;ADM3_EN' -r=wavg -o=test1.csv
+
 ```
 Options:
 
-	-n = netcdf file
+	-nc  = netcdf file
 
-	-ni = netcdf variable and dimension information
+	-nci = netcdf variable and dimension information
 			available options:
 			X = x dimension variable name,
 			Y = y dimension variable name,
-			T = time dimesion variable name,
+			T = time dimension variable name,
 			V = variable name,
 			slicer = slicing index for obtaining 3d array [optional]
 					
-			note: `slicer` is required if variable has greather than three dimension
+			note: `slicer` is required if variable has more than three dimension
 
-	-s  = shape file ( canbe zipped shapefile, shapefile or geojson )
+	-sf  = shape file ( can be zipped shapefile, shapefile or geojson )
 
-	-sp = shapefile properties
-		only required when shapefile contains multiple records
+	-sfp = shapefile properties
+			only required when shapefile contains multiple records
 
-	-r  = reducer, default is average
-		Available options: min,max,avg,wavg
+	-r   = reducer, default is average
+			Available options: min,max,avg,wavg
 
-	-o  = output file
+	-o   = output file name
+
+
+### Causes of Erroneous output
+
+	- when shapefile and netcdf file have different projection
+	- shapefile dosen't fully reside within netcdf bounds 

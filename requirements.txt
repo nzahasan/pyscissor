@@ -1,0 +1,7 @@
+numpy>=1.18.3
+netCDF4>=1.5.3
+shapely>=1.7.0
+fiona>=1.8.13
+pandas>=1.0.3
+yaspin
+scipy>=1.4.1
