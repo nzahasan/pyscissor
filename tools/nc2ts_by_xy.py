@@ -158,17 +158,17 @@ def main():
 
 
     # bilinear interpolation
-    if args.intp=='bilinear'
+    if args.intp=='bilinear':
         
 
-        intp_arr_2d = np.empty(
-            [
-                [values[nn_yi,nn_xi],values[nn_yi,nn_xi+1]],
-                [values[nn_yi+1,nn_xi],values[nn_yi+!,nn_xi+1]],
-            ]
-            ,dtype=np.float64)
+        # intp_arr_2d = np.empty(
+        #     [
+        #         [values[nn_yi,nn_xi],values[nn_yi,nn_xi+1]],
+        #         [values[nn_yi+1,nn_xi],values[nn_yi+1,nn_xi+1]],
+        #     ]
+        #     ,dtype=np.float64)
 
-        intp_fn = interp2d([nn_xi,nn_xi+1],[nn_yi,nn_yi+1],intp_arr_2d)
+        # intp_fn = interp2d([nn_xi,nn_xi+1],[nn_yi,nn_yi+1],intp_arr_2d)
 
         # 
 
