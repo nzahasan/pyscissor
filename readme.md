@@ -43,8 +43,8 @@ avg = np.average(var,weights=weight_grid)
 A detailed use case can be found <a href="notebooks/example_01.ipynb">here</a>
 
 
-### Using nc2ts.py
-the package contains a `nc2ts.py` script. Which can be used to quickly extract 
+### Using nc2ts_by_shp.py
+this package contains a `nc2ts_by_shp.py` script. A command line tool that can be used to quickly extract 
 reduced(min/max/average/weighted average) time-series form netcdf file with shapefile
 
 ```bash
