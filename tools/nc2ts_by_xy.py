@@ -161,16 +161,22 @@ def main():
     if args.intp=='bilinear':
         
 
-        # intp_arr_2d = np.empty(
-        #     [
-        #         [values[nn_yi,nn_xi],values[nn_yi,nn_xi+1]],
-        #         [values[nn_yi+1,nn_xi],values[nn_yi+1,nn_xi+1]],
-        #     ]
-        #     ,dtype=np.float64)
+        # at y=0 interpolation
+        # x0,v_x0y0 - x1,v1
+        # v_xiy0 = v_x0y0 + (v_x1y1-v_x0y0)/(x1-x0)* (xi-x0) 
 
-        # intp_fn = interp2d([nn_xi,nn_xi+1],[nn_yi,nn_yi+1],intp_arr_2d)
 
-        # 
+        blin_val = np.empty(times.shape[0])
+        intp_arr_2d = np.empty(
+            [
+                [values[nn_yi,nn_xi],values[nn_yi,nn_xi+1]],
+                [values[nn_yi+1,nn_xi],values[nn_yi+1,nn_xi+1]],
+            ]
+            ,dtype=np.float64)
+
+        intp_fn = interp2d([nn_xi,nn_xi+1],[nn_yi,nn_yi+1],intp_arr_2d)
+
+        
 
         pass
 

@@ -19,7 +19,6 @@ import numpy as np,pandas as pd
 from yaspin import yaspin
 from pyscissor import scissor
 from shapely.geometry import shape
-from datetime import datetime as dt
 from netCDF4 import Dataset,num2date
 
 
