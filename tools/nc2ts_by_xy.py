@@ -2,13 +2,8 @@
 '''
     extract timeseries using lat/lon
     interpolation methods, 
-        --bilinear, 
-        --nearest-neighbour, 
-        --cubic
-
-        add point bufr
-
-
+        --bilinear
+        --nearest-neighbour
 '''
 
 from netCDF4 import Dataset,num2date
@@ -16,13 +11,13 @@ import numpy as np
 import sys,os
 import argparse
 import pandas as pd
-from scipy.interpolate import interp2d
+from pyscissor import pinpoint
 
 
 
 def parse_nci(args_nci):
 
-    nci={}
+    nci=dict()
     
     for rec in args_nci.split(';'):
         rec_split = rec.split('=')
@@ -101,8 +96,8 @@ def main():
     try:
         times  = num2date(timevar[:],timevar.units)
         times = [ tx.strftime(tx.format) for tx in times  ]
-    except ValueError as err:
-        print('unable to use units for datetime conversion:',err,'using raw time values')
+    except:
+        print('unable to use units for datetime conversion. using raw time values')
         times=timevar[:]
 
 
@@ -110,80 +105,34 @@ def main():
 
     # check if within extent
 
-    
-
-    if nci.get('slicer',None)!=None:
-
-        try:
-            datavar = eval(f"datavar{nci['slicer']}")
-        except:
-            sys.exit('invalid slicing information')
-
-    if len(datavar.shape)>3:
-
-        sys.exit(f"{nci['V']} has more than 3 dimension,provide slicing information")
+    if len(datavar.shape)>3: 
+        if nci.get('slicer',None)!=None:
+            try:
+                datavar = eval(f"datavar{nci['slicer']}")
+            except:
+                sys.exit('invalid slicing information')
+        else:
+            sys.exit(f"{nci['V']} has more than 3 dimension,provide slicing information")
 
 
-
-
-    # for nearest neighbour
     time_series = pd.DataFrame()
     time_series[nci['T']] = times
 
-    nn_yi = np.argmin(np.abs(lats-args.y))
-    nn_xi = np.argmin(np.abs(lons-args.x))
+    # initialize pinpoint and set xy
+    pin = pinpoint(lats,lons)
+    pin.set_xy(args.y,args.x)
+    
     # nearest neighbour
     if args.intp=='nearest':
 
-        values = datavar[:,nn_yi,nn_xi]
-
-
-    '''
-
-      x0,y1                x1,yi
-        |                    |
-    ----|-------^------------|----
-        |       |            |
-        |---->xi,yi<---------|
-        |       |            |
-    ----|-------^------------|----
-        |                    |
-      x0,y0                x1,y0
-
-      xi,y0 = v10- 
-
-      xi,y1 =
-    '''
-
+        values = datavar[:,pin.nn_id[0],pin.nn_id[1]]
 
 
     # bilinear interpolation
     if args.intp=='bilinear':
-        
-
-        # at y=0 interpolation
-        # x0,v_x0y0 - x1,v1
-        # v_xiy0 = v_x0y0 + (v_x1y1-v_x0y0)/(x1-x0)* (xi-x0) 
-
-
-        blin_val = np.empty(times.shape[0])
-        intp_arr_2d = np.empty(
-            [
-                [values[nn_yi,nn_xi],values[nn_yi,nn_xi+1]],
-                [values[nn_yi+1,nn_xi],values[nn_yi+1,nn_xi+1]],
-            ]
-            ,dtype=np.float64)
-
-        intp_fn = interp2d([nn_xi,nn_xi+1],[nn_yi,nn_yi+1],intp_arr_2d)
-
-        
-
-        pass
-
-    # import pylab as pl
-    # pl.plot(values)
-    # pl.show()
-
+        values = np.empty(len(times),dtype=np.float32)
+        for ts in range(len(times)):
+            values[ts] = pin.bilinear(datavar[ts])
 
     time_series[nci['V']] = values
 

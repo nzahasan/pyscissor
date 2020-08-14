@@ -24,7 +24,7 @@ from netCDF4 import Dataset,num2date
 
 def parse_nci(args_nci):
 
-    nci={}
+    nci=dict()
     
     for rec in args_nci.split(';'):
         rec_split = rec.split('=')
@@ -116,8 +116,8 @@ def main():
     try:
         times  = num2date(timevar[:],timevar.units)
         times = [ tx.strftime(tx.format) for tx in times  ]
-    except ValueError as err:
-        print('Error:',err,'using raw time values')
+    except:
+        print('Warning: unable to convert time, using raw time values!')
         times=timevar[:]
 
     tseries_data = pd.DataFrame()
@@ -140,18 +140,15 @@ def main():
         print('weight needs to be transposed')
         # @add transpose func
 
-    # if datavar is not masked array create masked array
 
-    if nci.get('slicer',None)!=None:
-
-        try:
-            datavar = eval(f"datavar{nci['slicer']}")
-        except:
-            sys.exit('invalid slicing information')
-
-    if len(datavar.shape)>3:
-
-        sys.exit(f"{nci['V']} has more than 3 dimension,provide slicing information")
+    if len(datavar.shape)>3: 
+        if nci.get('slicer',None)!=None:
+            try:
+                datavar = eval(f"datavar{nci['slicer']}")
+            except:
+                sys.exit('invalid slicing information')
+        else:
+            sys.exit(f"{nci['V']} has more than 3 dimension,provide slicing information")
 
 
     # read shapefile
@@ -170,6 +167,8 @@ def main():
                 'shapefile has more than 1 record.',
                 'No shape properties is provided for column header'
             )
+
+    # if datavar is not masked array create masked array
 
     premasked=np.ma.is_masked(datavar)
 

@@ -29,6 +29,7 @@ class scissor():
         max_lat_idx = np.abs(self.lats - self.shape_obj.bounds[3]).argmin()
 
         # expand lat lon index by 1 cell 
+        # only search/operate within these bounds
         self.lon_idx_range = np.arange( 
             (min_lon_idx-1) if min_lon_idx>0 else 0,
             (max_lon_idx+1)+1 if (max_lon_idx+1)<self.nlons else max_lon_idx+1
@@ -232,7 +233,7 @@ class scissor():
 
 
     # using recursive division
-    # inspiration: https://gist.github.com/perrette/a78f99b76aed54b6babf3597e0b331f8
+    # inspiration by @ https://gist.github.com/perrette/a78f99b76aed54b6babf3597e0b331f8
     def get_masked_weight_recursive(self,lat_ids=None,lon_ids=None,masked_weight=None,root=True):
 
         '''

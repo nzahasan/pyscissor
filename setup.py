@@ -8,6 +8,7 @@ readme_contents = open('readme.md','r').read()
 setup(
     name='pyscissor',
     version=__version__,
+    python_requires='>=3.6',
     keywords = ['netcdf', 'crop','shapefile'],
     url='https://github.com/nzahasan/pyscissor',
     description='A python module for obtaining reduced(min,max,avg) value from netCDF file under a polygon region',
@@ -27,7 +28,6 @@ setup(
         'shapely',
         'fiona',
         'pandas',
-        'yaspin',
-        'scipy',
+        'yaspin'
     ]
 )

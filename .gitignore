@@ -16,5 +16,7 @@ dist/
 # [pytest]
 .pytest_*
 
-
 .idea
+
+out_xy.csv
+out_shp.csv

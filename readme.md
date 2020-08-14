@@ -1,5 +1,5 @@
 # pyscissor  
-![Test Python package](https://github.com/nzahasan/pyscissor/workflows/test/badge.svg)  
+![Test Python package](https://github.com/nzahasan/pyscissor/workflows/build/badge.svg)  
 A Python3 module for extracting data from netcdf file under a shapefile region.  
 
 <img src="data/sample.png" height="500" align="center">
