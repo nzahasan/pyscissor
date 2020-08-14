@@ -5,3 +5,4 @@ fiona>=1.8.13
 pandas>=1.0.3
 yaspin
 scipy>=1.4.1
+pytest
