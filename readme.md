@@ -17,7 +17,7 @@ $ python3 setup.py install
 or using pip
 
 ```bash
-$ pip install https://github.com/nzahasan/pyscissor/zipball/master
+$ pip install pyscissor
 ```
 
 ### Using pyscissor
@@ -30,17 +30,15 @@ from pyscissor import scissor
 
 pys = scissor(polygon,lats,lons)
 
-weight_grid = pys.get_masked_weight()
-
-# assign mas to variable
-var.mask = weight_grid.mask 
-
+weight_grid = pys.get_masked_weight() #=> returns a masked array containing weights
 
 # get weighted average
 avg = np.average(var,weights=weight_grid)
 
+# if only intersection mask with shape is needed use `weight_grid.mask`
 ```
-A detailed use case can be found <a href="notebooks/example_01.ipynb">here</a>
+A detailed use case can be found in the following notebook <a href="notebooks/example_01.ipynb">example_01.ipynb</a>
+
 
 
 ### Using nc2ts_by_shp.py
