@@ -6,16 +6,10 @@ from pyscissor import __version__
 
 readme_contents = open('readme.md','r').read()
 
-
-if sys.platform.lower() == 'linux':
-
-    scritps_list = ['tools/nc2ts_by_shp.py','tools/nc2ts_by_xy.py']
-
-elif sys.platform.lower() == 'win32':
-    scritps_list = [
-        'tools/nc2ts_by_shp.py','tools/nc2ts_by_xy.py',
-        'tools/nc2ts_by_shp.cmd','tools/nc2ts_by_xy.cmd',
-    ]
+scritps_list = [
+    'tools/nc2ts_by_shp.py','tools/nc2ts_by_xy.py',
+    'tools/nc2ts_by_shp.cmd','tools/nc2ts_by_xy.cmd',
+]
 
 setup(
     name = 'pyscissor',
