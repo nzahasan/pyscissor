@@ -1,5 +1,5 @@
 # pyscissor
-![Supported Version](https://img.shields.io/badge/python-3.6|3.7|3.8|3.9-blue.svg) 
+![Supported Version](https://img.shields.io/badge/python-3.6|3.7|3.8-blue.svg) 
 ![Action: Build](https://github.com/nzahasan/pyscissor/workflows/build/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)  
 A Python3 module for extracting data from netcdf file under a shapefile region.  
