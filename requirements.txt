@@ -6,3 +6,4 @@ pandas>=1.0.3
 yaspin
 scipy>=1.4.1
 pytest
+twine
