@@ -142,9 +142,9 @@ def main():
 
 
     if len(datavar.shape)>3: 
-        if nci.get('slicer',None)!=None:
+        if nci.get('SLICER',None)!=None:
             try:
-                datavar = eval(f"datavar{nci['slicer']}")
+                datavar = eval(f"datavar{nci['SLICER']}")
             except:
                 sys.exit('invalid slicing information')
         else:
