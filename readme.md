@@ -26,12 +26,25 @@ $ pip install pyscissor
 ### Using pyscissor
 
 ```python
+import fiona
 import numpy as np
+from netCDF4 import Dataset
+from shapely.geometry import shape
 from pyscissor import scissor 
 
-'''<code for reading netcdf and shapefile>'''
 
-pys = scissor(polygon,lats,lons)
+# read shapefile
+sf = fiona.open('data/shape.geojson')
+shapely_shp =shape(sf.get(0)['geometry'])
+
+
+# read netcdf
+nf = Dataset('data/sample_2.nc','r')
+lats = nf.variables['lat'][:]
+lons = nf.variables['lon'][:]
+
+# create scissor object 
+pys = scissor(shapely_shp,lats,lons)
 
 weight_grid = pys.get_masked_weight() #=> returns a masked array containing weights
 
@@ -40,7 +53,11 @@ avg = np.average(var,weights=weight_grid)
 
 # if only intersection mask with shape is needed use `weight_grid.mask`
 ```
-A detailed use case can be found in the following notebook <a href="notebooks/example_01.ipynb">example_01.ipynb</a>
+A detailed use case can be found in the following jupyter notebooks 
+- <a href="notebooks/example_01.ipynb">example_01.ipynb</a>
+- <a href="notebooks/example_02.ipynb">example_02.ipynb</a>
+- <a href="notebooks/example_03.ipynb">example_03.ipynb</a>
+- <a href="notebooks/example_04.ipynb">example_04.ipynb</a>
 
 
 
