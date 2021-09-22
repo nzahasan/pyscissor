@@ -113,12 +113,18 @@ def main():
 
     # parse time
 
-    try:
-        times  = num2date(timevar[:],timevar.units)
-        times = [ tx.strftime(tx.format) for tx in times  ]
-    except:
+    if hasattr(timevar, 'calendar') and hasattr(timevar, 'units'):
+        times  = num2date(timevar[:], units=timevar.units, calendar=timevar.calendar)
+
+    elif hasattr(timevar, 'units'):
+        times  = num2date(timevar[:], units=timevar.units)
+
+    else: 
         print('Warning: unable to convert time, using raw time values!')
         times=timevar[:]
+    
+    times = [ tx.strftime(tx.format) for tx in times  ]
+    
 
     tseries_data = pd.DataFrame()
     tseries_data['date']=times
