@@ -5,7 +5,7 @@ from shapely.geometry import Polygon,MultiPolygon
 
 class scissor():    
 
-    def __init__(self, shape_obj,lattitude_array,longitude_array):
+    def __init__(self, shape_obj, lattitude_array,longitude_array):
         
         self.lats  = lattitude_array
         self.nlats = self.lats.shape[0]
@@ -21,7 +21,7 @@ class scissor():
         else:
             raise Exception('Invalid object, Must be a shapely Polygon or MultiPolygon.')
 
-        # find nearest neighbours for lat and lons
+        # find nearest neighbors for lat and lons
         min_lon_idx = np.abs(self.lons - self.shape_obj.bounds[0]).argmin()
         max_lon_idx = np.abs(self.lons - self.shape_obj.bounds[2]).argmin()
 
@@ -36,8 +36,8 @@ class scissor():
         )
 
         # lat can be laid in 2 ways:
-        #   - lat deceases with index[generel case] / Lat reversed
-        #   - lat inceases with index[odd case]  
+        #   - lat deceases with index[general case] / Lat reversed
+        #   - lat increases with index[odd case]  
 
         # shape bound sample (90.53, 20.74, 92.68, 24.26)
 
@@ -63,12 +63,19 @@ class scissor():
         return '<pyscissor_instance>'        
 
 
+    def get_masked_weight(self, recursive=True):
+        
+        if recursive == False:
+            return self.get_masked_weight_iter()
+        
+        return self.get_masked_weight_recursive()
+        
     
-    def get_masked_weight(self):
+    def get_masked_weight_iter(self):
         
         ''' 
 
-        # generel case
+        # general case
                 
                                        r-1,c 
                                          |
@@ -165,8 +172,8 @@ class scissor():
         '''
 
 
-        weight_grid = np.zeros((self.nlats,self.nlons))
-        mask_grid   = np.ones((self.nlats,self.nlons),dtype=np.bool)
+        weight_grid = np.zeros((self.nlats, self.nlons))
+        mask_grid   = np.ones((self.nlats, self.nlons), dtype=bool)
 
         for ry in self.lat_idx_range:
             
@@ -255,7 +262,7 @@ class scissor():
             lon_ids       = self.lon_idx_range.copy()
             masked_weight = np.ma.masked_array(
                                 np.zeros((self.nlats,self.nlons)),
-                                mask = np.ones((self.nlats,self.nlons),dtype=np.bool)
+                                mask = np.ones((self.nlats,self.nlons), dtype=bool)
                             )
 
         gx0,gx1= lon_ids[0],lon_ids[-1]
