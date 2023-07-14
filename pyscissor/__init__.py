@@ -3,4 +3,4 @@ from .pinpoint import pinpoint
 from .helper import shapereader
 
 ## version information
-__version__='1.1.3'
+__version__='1.1.6'
